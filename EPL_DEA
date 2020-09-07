@@ -1,0 +1,86 @@
+install.packages("ggplot2")
+install.packages("dplyr")
+install.packages("tidyverse")
+library(ggplot2)
+library(dplyr)
+library(tidyverse)
+
+head(epl_data)
+str(epl_data)
+
+# in which days plays are played most
+
+epl_data_group <- epl_data %>% 
+  group_by(matchDay) %>% 
+  count() %>% 
+  arrange(desc(n))
+
+# total amount of points each team obtained
+
+epl_data_point <- epl_data %>%
+  select(teamId,tot_points) %>%
+  group_by(teamId) %>% 
+  summarise(totalPoints = max(tot_points)) %>% 
+  arrange(desc(totalPoints))
+
+#plot the actual goals and expected goals distribution difference
+
+epl_data_score <- epl_data %>% 
+  mutate(diff = xG - scored)
+
+g1 <- ggplot(epl_data_score, aes(x=diff)) + 
+  geom_density()
+
+#plot the actual points and expected points distribution difference
+
+epl_data_points <- epl_data %>% 
+  mutate(diff_p= xpts - pts)
+
+g2 <- ggplot(epl_data_points, aes(x=diff_p))+
+  geom_density()
+
+#correlation between expected goals and related stats
+epl_data_cor <- epl_data %>% 
+  select(xG, HS.x, HST.x, HtrgPerc, tot_goal)
+
+cor(epl_data_cor)
+
+#find out the goalkeeper performance
+epl_data_goalkeeper <- epl_data %>% 
+  group_by(teamId) %>% 
+  summarise(gKratio = mean(missed / xGA)) %>% 
+  arrange(desc(gKratio))
+
+#average score in games
+avg_score <- mean(epl_data$scored + epl_data$missed)
+
+epl_data %>% 
+  group_by(h_a) %>% 
+  summarise(mean(scored))
+
+epl_data %>% 
+  group_by(h_a) %>% 
+  summarise(mean(pts))
+
+#collect home and away team stats
+
+epl_data %>% 
+  filter(h_a == "h") %>% 
+  summarise(meanHS.x = mean(HS.x), meanHST.x= mean(HST.x), meanHtrg = mean(HtrgPerc))
+
+epl_data %>% 
+  filter(h_a == "a") %>% 
+  summarise(meanAS.x = mean(AS.x), meanHST.x= mean(AST.x), meanHtrg = mean(AtrgPerc))
+
+#find out points and expected points difference performance
+
+epl_data_points_d <- epl_data %>% 
+  group_by(teamId) %>% 
+  summarise(pts_performance = mean(pts-xpts)) %>% 
+  arrange(desc(pts_ratio))
+
+#check out referee stats
+epl_data_referee <- epl_data %>% 
+  group_by(Referee.x) %>% 
+  summarise(cards = mean(HY.x+HR.x+AY.x+AR.x)) %>% 
+  arrange(desc(cards))
